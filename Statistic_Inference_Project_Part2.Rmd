@@ -1,0 +1,61 @@
+---
+title: "Statistic Inference Project Part 2"
+date: "April 7, 2018"
+output:
+  pdf_document: default
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(gridExtra)
+```
+###Part 2: Basic Inferential Data Analysis Instructions
+Now in the second portion of the project, we're going to analyze the ToothGrowth data in the R datasets package.
+
+####1. Load the ToothGrowth data 
+```{r}
+data("ToothGrowth")
+data <- ToothGrowth
+```
+####2. Provide a basic summary of the data
+```{r}
+a<-ggplot( aes(x=supp, y=len), data=data) + geom_point(aes(color=supp))
+b <- ggplot( aes(x=factor(dose), y=len), data=data) + geom_boxplot(aes(fill=factor(dose)))
+
+grid.arrange(a, b, ncol=2, heights = 2)
+summary(data)
+``` 
+
+###3. Use confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose. ####3.1 Compare tooth growth by supp
+
+H0: Toothgrowth is the same from VC supp and OJ supp (the 2 delivery methods: ascorbic acid and orange juice)  
+H1: Toothgrowth is different 
+```{r}
+t.test(data=data, len~supp, paired=FALSE, var.equal=TRUE)
+
+```
+
+The P value = 0.06, which is > the signifance level, 0.05  
+In addition, hypothesis value 0 is inside the 95% confidence interval.  
+Thus,we do not reject the null hypothesis.
+####3b. Compare the toothgrowth by dose
+H0: Toothgrowth varies by dose  
+HA: The different in dose has no impact to Toothgrowth 
+```{r}
+dose05 <- data[data$dose==0.5,]
+dose1 <- data[data$dose==1,]
+dose2 <- data[data$dose==2,]
+
+t.test(dose05$len,dose1$len, paired=FALSE, alternative = "two.sided")
+t.test(dose1$len,dose2$len, paired=FALSE, alternative = "two.sided")
+t.test(dose05$len,dose2$len, paired=FALSE, alternative = "two.sided")
+
+```
+Compare the dose samples, all p-values are close to 0.  
+None of the confidence interval has 0 in it.  
+Thus we reject H0.  
+
+###4. Conclusion:
+Different ways to supply the vitamin C has no impact to tooth growth.  
+It is possible that the difference in dose has an impact to tooth group.
+

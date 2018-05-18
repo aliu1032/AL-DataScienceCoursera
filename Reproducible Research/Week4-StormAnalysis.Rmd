@@ -1,0 +1,372 @@
+---
+title: 'Coursera Class: Reproducible Research Week4 - Peer Review Assignment'
+author: "April L"
+date: "January 20, 2018"
+output:
+  html_document: default
+  pdf_document: default
+Synopsis: null
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(ggplot2)
+```
+
+## Synopsis
+Storms and other severe weather events can cause both public health and economic problems for communities and munipalitie.
+
+This project involves exploring the US National Oceanic and Atmospheric Administration's (NOAA) storm database.
+
+
+The analysis address the following questions:
+
+1. Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+2. Across the United States, which types of events have the greatest economic consequencs?
+
+
+###Data Processing
+
+** Read Data **
+
+First, load the data from the file into R.
+
+After a glance at the data, I found that there are inconsistency in the EVTYPE. 
+In the column, there are mis-spelling, different meaning, and observations which could be out of scope.
+
+Using the suggestion in :
+https://rstudio-pubs-static.s3.amazonaws.com/58957_37b6723ee52b455990e149edde45e5b6.html
+I calculate the property damage value.
+
+
+```{r read data}
+
+temp <- tempfile()
+
+if (!file.exists(temp)) {
+    download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2", temp)
+}
+
+data <- read.csv(temp)
+
+```
+
+
+#### explore & clean EVTYPE data
+1. Remove Leading/Trailing Whitespace
+
+```{r}
+
+# remove leading & trailing whitespace
+data$EVTYPE_c <- trimws(data$EVTYPE, which = c('both'))
+
+#assume the "Monthly" & "Summary" are not the special events
+cond <- "Monthly|Summary"
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data <- data[-(c),]
+
+
+# explore ETTYPE
+a <- sort(unique(data$EVTYPE))
+```
+
+
+```{r}
+#create a new column for cleaned EVTYPE
+
+cond <- "^AVALAN.*$"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Avalanche"
+
+cond <- "^BLIZZARD.*$"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Blizzard"
+
+cond <- "Dust"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Dust Storm"
+
+cond <- "Smoke"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Dense Smoke"
+
+cond <- "Funnel.*$"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Funnel Cloud"
+
+cond <- "Surf"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "High Surf"
+
+cond <- "^WINTER S.*$"
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE) 
+data$EVTYPE_c[c] <- "Winter Storm"
+
+cond <- "^WINTER W.*$"
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE) 
+data$EVTYPE_c[c] <- "Winter Weather"
+
+cond <- "^Wild.*$"
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE) 
+data$EVTYPE_c[c] <- "Wildfire"
+
+cond <- ".*SPOUT.*$"
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE) 
+data$EVTYPE_c[c] <- "Waterspout"
+
+cond <- "^VO.*$"
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE) 
+data$EVTYPE_c[c] <- "Volcanic Ash"
+
+cond <- "Tropical Storm.*$"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE) 
+data$EVTYPE_c[c] <- "Tropical Storm"
+
+cond <- "^TORNA?Da?O.*$"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Tornado"
+
+cond <- "Sleet"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Sleet"
+
+cond <- "Heat" 
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Heat"
+
+cond <- "COLD"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Cold/Wind Chill"
+
+cond <- "Rain"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Heavy Rain"
+
+cond <- "Heavy Snow"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Heavy Snow"
+
+cond <- "Snow"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Heavy Snow"
+
+cond <- "High *Wind"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "High Wind"
+
+cond <- "^LIGHTN?ING.*$"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE) 
+data$EVTYPE_c[c] <- "Lightning"
+c <- which(data$EVTYPE_c == 'LIGNTNING')
+data$EVTYPE_c[c] <- "Lightning"
+
+cond <- "(?|(Hurricane)|(TYPHOON))"
+b <- unique(data$EVTYPE_c[grepl(cond , data$EVTYPE_c, ignore.case = TRUE, perl=T)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T) 
+data$EVTYPE_c[c] <- "Hurricane (Typhoon)"
+
+cond <- "(?|DROUGHT|Dry)"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)
+data$EVTYPE_c[c] <- "Drought"
+
+###
+
+cond <- "^THUNDER.*$"
+cond <- "(?<!Marine )thu.*"
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T) 
+data$EVTYPE_c[c] <- "Thunderstorm Wind"
+
+cond <- "^TSTM.*$"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE) 
+data$EVTYPE_c[c] <- "Thunderstorm Wind"
+
+###
+
+cond <- "(?<!Marine )(?|(Strong)|(Gusty)) WIND"   # Not begin with Marine, Preceed with Strong or Gusty
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)
+data$EVTYPE_c[c] <- "Strong Wind"
+
+cond <- ".?(?<!Marine )Hail.*$"    #Not begin with Marine
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)
+data$EVTYPE_c[c] <- "Hail"
+
+c <- which(data$EVTYPE_c == 'MARINE TSTM WIND')
+data$EVTYPE_c[c] <- "MARINE THUNDERSTORM WIND"
+
+cond <- ".?Flash.*$"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE)
+data$EVTYPE_c[c] <- "Flash Flood"
+
+cond <- "(?|(Coast)|(Beach)|(CSTL))"  
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)
+data$EVTYPE_c[c] <- "Coastal Flood"
+
+cond <- "(?<!Coastal |Flash )flood"   #not begin with Coastal or Flash
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)
+data$EVTYPE_c[c] <- "Flood"
+
+cond <- "Extreme (?! WET)"   #not follow with WET
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)
+data$EVTYPE_c[c] <- "Extreme Cold/Wind Chill"
+
+cond <- "Freez(?!ing FOG)"   #not follow with ing FOG
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)
+data$EVTYPE_c[c] <- "Frost/Freeze"
+
+cond <- "Freez(?=ing FOG)"   #not follow with ing FOG
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)
+data$EVTYPE_c[c] <- "Freezing Fog"
+
+cond <- "Ice"   
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)
+data$EVTYPE_c[c] <- "Ice Storm"
+
+
+cond <- "Lake.Effect"   
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)
+data$EVTYPE_c[c] <- "Lake-Effect Snow"
+
+cond <- "^Wint...(?!Storm|Weather)" 
+b <- unique(data$EVTYPE_c[grepl(cond, data$EVTYPE_c, ignore.case = TRUE, perl=TRUE)])
+c <- grep(cond, data$EVTYPE_c, ignore.case = TRUE, perl=T)
+data$EVTYPE_c[c] <- "Wintry Mix"
+
+```
+
+
+```{r}
+
+a <- sort(unique(data$EVTYPE_c))
+
+# take a look of number of observations cleaned **
+file_path = "~/workspace/AL-DataScienceCoursera/Reproducible Research"
+analysis_event = read.csv(file.path(file_path,'StormEventTable.csv'))
+
+temp = data[data$EVTYPE_c %in% analysis_event$Event,]
+
+cleaned = round(nrow(temp)/nrow(data)*100,2)
+
+```
+After cleaning the EVTYPE values, `r cleaned`% observations are cleaned / avialable for analysis.
+
+
+** process property damage value **
+```{r}
+
+summary(temp$PROPDMGEXP)
+
+temp$PROPDMGEXP <- as.character(temp$PROPDMGEXP)
+
+a <- which((temp$PROPDMGEXP %in% seq(2,8)))
+temp[a,'PROPDamage'] <- temp[a,'PROPDMG'] * as.numeric(temp[a,'PROPDMGEXP'])
+
+a <- which((temp$PROPDMGEXP == 'H') | (temp$PROPDMGEXP == 'h'))
+temp[a,'PROPDamage'] = temp[a,'PROPDMG'] * 100
+
+a <- which((temp$PROPDMGEXP == 'K') | (temp$PROPDMGEXP == 'k'))
+temp[a,'PROPDamage'] = temp[a,'PROPDMG'] * 1000
+
+a <- which((temp$PROPDMGEXP == 'M') | (temp$PROPDMGEXP == 'm'))
+temp[a,'PROPDamage'] = temp[a,'PROPDMG'] * 1000000
+
+a <- which((temp$PROPDMGEXP == 'B') | (temp$PROPDMGEXP == 'b'))
+temp[a,'PROPDamage'] = temp[a,'PROPDMG'] * 1000000000
+
+a <- which((temp$PROPDMGEXP == '+') | (temp$PROPDMGEXP == '1'))
+temp[a,'PROPDamage'] = temp[a,'PROPDMG']
+
+a <- which((temp$PROPDMGEXP == '0') )
+temp[a,'PROPDamage'] = temp[a,'PROPDMG'] * 10
+
+a <- which((temp$PROPDMGEXP == '') 
+           | (temp$PROPDMGEXP == '?')
+           | (temp$PROPDMGEXP == '-'))
+temp[a,'PROPDamage'] = temp[a,'PROPDMG'] * 0
+
+```
+
+## Results
+
+** Question 1 **
+1. Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+In the analysis, I assumed the population health is measured by the quantity of injuries.
+
+```{r}
+a <- temp %>%
+     group_by(EVTYPE_c) %>%
+     summarize(totalInjuries = sum(INJURIES))
+
+event <- a[which.max(a$totalInjuries),'EVTYPE_c']
+
+
+ggplot(data=a, aes(x=EVTYPE_c, y=totalInjuries)) +
+    geom_bar(stat="identity") +
+    theme(axis.text.x = element_text(angle=90, hjust=1)) +
+    xlab('Event') + ylab('Total Injuries') + 
+    ggtitle('Injuries due to Events')
+```
+Question 1 Result: As show in the plot, across the United States, `r event` is tne most harmful with respect to population health.
+
+
+** Question 2 **
+Across the United States, which types of events have the greatest economic consequences?
+In the analysis, I assume the economic consequence is measured by the quantity of property damage.
+
+```{r}
+
+a <- temp %>%
+     group_by(EVTYPE_c) %>%
+     summarize(totalPropDamage = sum(PROPDamage))
+
+event <- a[which.max(a$totalPropDamage),'EVTYPE_c']
+
+library(ggplot2)
+
+ggplot(data=a, aes(x=EVTYPE_c, y=totalPropDamage)) +
+    geom_bar(stat="identity") +
+    theme(axis.text.x = element_text(angle=90, hjust=1)) + 
+    ggtitle('Economic consequence due to Events') +
+    xlab('Event') + ylab('Property Damage')
+
+```
+
+Question 2 Result: As show in the plot, across the United States, `r event` have the greatest economic consequeces.
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/353449/ff7f99f94deb43c89f8ec50e2bd9ae4d
+bundleId: https://api.rpubs.com/api/v1/document/353449/ff7f99f94deb43c89f8ec50e2bd9ae4d
+url: http://rpubs.com/aliu1032/353449
+when: 1517192672.32642
